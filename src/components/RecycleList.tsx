@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { findDOMNode } from 'react-dom';
 import './RecycleList.css';
 
 interface IRLProps {
@@ -55,15 +56,31 @@ export default class RecycleList extends React.Component<IRLProps, IRLState> {
 
   public init () {
     const current = this.state.refWrapper.current as HTMLDivElement;
+    const { parentNode } = current;
+    const { childElementCount, childNodes, clientHeight: parentNodeClientHeight } = parentNode as HTMLElement;
+    let otherHeight = 0;
+    if (!childElementCount) {
+      return
+    } else if (childElementCount === 1 && childNodes[0] === findDOMNode(this)) {
+      // tslint:disable-next-line:no-console
+      console.log('childElementCount === 1', findDOMNode(this))
+    } else if (childElementCount > 1) {
+      for (let i = 0; i < childElementCount; i++) {
+        const { clientHeight } = childNodes[i] as HTMLElement;
+        if (childNodes[i] !== findDOMNode(this)) {
+          otherHeight += clientHeight;
+        }
+      }
+    }
     const virtualCurrent = this.state.refVirtualWrapper.current as HTMLDivElement;
     if (current && virtualCurrent) {
       const { top: topRange } = virtualCurrent.getBoundingClientRect()
-      const { height } = current.getBoundingClientRect()
+      // const { height } = current.getBoundingClientRect()
       const { childrenHeight, data } = this.props
       this.setState({
         topRange,
         virtualHeight: childrenHeight * data.length,
-        wrapperHeight: height,
+        wrapperHeight: parentNodeClientHeight - otherHeight,
       }, () => {
         this.handleScroll()
       })
@@ -86,7 +103,7 @@ export default class RecycleList extends React.Component<IRLProps, IRLState> {
 
   public render() {
     return (
-      <div className="wrapper" ref={this.state.refWrapper} onScroll={this.handleScroll}>
+      <div className="wrapper" style={{ height: this.state.wrapperHeight }} ref={this.state.refWrapper} onScroll={this.handleScroll}>
         <div className="virtual-wrapper" ref={this.state.refVirtualWrapper} style={{
           height: this.state.virtualHeight
         }}>

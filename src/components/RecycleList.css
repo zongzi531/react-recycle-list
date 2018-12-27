@@ -1,5 +1,4 @@
 .wrapper {
-  height: 100%;
   overflow: auto;
   font-size: 0;
   -webkit-overflow-scrolling: touch;
